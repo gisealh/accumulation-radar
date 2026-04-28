@@ -1,0 +1,39 @@
+name: Accumulation Radar Scheduler
+
+on:
+  schedule:
+    # 每天 18:00 更新收筹池（北京时间 UTC+8 的 18:00 = UTC 10:00）
+    - cron: '0 10 * * *'
+    # 每小时 30 分钟跑 OI 异动监控
+    - cron: '30 * * * *'
+  workflow_dispatch:  # 支持手动触发
+
+jobs:
+  run-pool:
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 10 * * *'  # 只在每日任务时运行
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Install requests
+        run: pip install requests
+        # ⚠️ 如果需要 Telegram 推送，把 Secrets 配置好（见下文）
+      - name: Run Pool Scan
+        run: python3 accumulation_radar.py pool
+
+  run-oi:
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '30 * * * *'  # 只在定时运行时执行
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Install requests
+        run: pip install requests
+      - name: Run OI Scan
+        run: python3 accumulation_radar.py oi
